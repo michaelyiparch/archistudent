@@ -1,0 +1,151 @@
+"use client"
+
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { createClient } from "@/lib/supabase/client"
+import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Heart, MessageSquare, Star } from "lucide-react"
+import { toast } from "sonner"
+import { useState, useOptimistic, startTransition } from "react"
+import { CATEGORY_LABELS, STAGE_LABELS } from "@/types/database"
+import type { Project } from "@/types/database"
+import { cn } from "@/lib/utils"
+
+export function ProjectCard({ project }: { project: Project }) {
+  const { user } = useAuth()
+  const router = useRouter()
+  const [liked, setLiked] = useOptimistic(
+    project.user_has_liked || false,
+    (_, next: boolean) => next
+  )
+  const [likeCount, setLikeCount] = useState(project.like_count || 0)
+  const [pending, setPending] = useState(false)
+
+  const profile = project.profiles
+  const authorInitials = profile?.full_name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "?"
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!user) {
+      toast("Sign in to like projects", {
+        action: { label: "Sign In", onClick: () => router.push("/auth/login") },
+      })
+      return
+    }
+
+    if (pending) return
+    setPending(true)
+
+    startTransition(() => {
+      setLiked(!liked)
+      setLikeCount((c) => c + (liked ? -1 : 1))
+    })
+
+    const supabase = createClient()
+    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
+
+    if (!profileData) {
+      setPending(false)
+      return
+    }
+
+    if (liked) {
+      await supabase.from("likes").delete().eq("project_id", project.id).eq("user_id", profileData.id)
+    } else {
+      await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
+    }
+
+    setPending(false)
+  }
+
+  return (
+    <Card className="group overflow-hidden border-zinc-200 hover:border-zinc-300 hover:shadow-md transition-all">
+      <Link href={`/project/${project.id}`}>
+        {/* Cover Image */}
+        <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden">
+          {project.cover_image_url ? (
+            <img
+              src={project.cover_image_url}
+              alt={project.title}
+              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center">
+              <span className="text-4xl text-zinc-300">🏛️</span>
+            </div>
+          )}
+
+          {/* Rating badge */}
+          {project.avg_rating && (
+            <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-1 rounded-full text-xs font-medium">
+              <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+              {project.avg_rating.toFixed(1)}
+            </div>
+          )}
+
+          {/* Category badge */}
+          <div className="absolute top-3 left-3">
+            <Badge variant="secondary" className="bg-white/90 backdrop-blur text-xs">
+              {CATEGORY_LABELS[project.category]}
+            </Badge>
+          </div>
+        </div>
+
+        <CardContent className="p-4">
+          {/* Author */}
+          <div className="flex items-center gap-2 mb-3">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback className="text-[10px]">{authorInitials}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm text-zinc-600 truncate">
+              {profile?.full_name || "Unknown"}
+              {profile?.verified_professional && (
+                <span className="ml-1 text-blue-500" title="Verified Professional">✓</span>
+              )}
+            </span>
+            <span className="text-xs text-zinc-400 ml-auto">
+              {STAGE_LABELS[project.stage]}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h3 className="font-semibold text-zinc-900 mb-1 line-clamp-1 group-hover:text-zinc-600 transition-colors">
+            {project.title}
+          </h3>
+          <p className="text-sm text-zinc-500 line-clamp-2 mb-4">{project.description}</p>
+
+          {/* Actions */}
+          <div className="flex items-center gap-4 text-sm text-zinc-500">
+            <button
+              onClick={handleLike}
+              disabled={pending}
+              className={cn(
+                "flex items-center gap-1 hover:text-red-500 transition-colors disabled:opacity-50",
+                liked && "text-red-500"
+              )}
+            >
+              <Heart className={cn("h-4 w-4", liked && "fill-current")} />
+              <span>{likeCount}</span>
+            </button>
+            <div className="flex items-center gap-1">
+              <MessageSquare className="h-4 w-4" />
+              <span>{project.review_count || 0} reviews</span>
+            </div>
+          </div>
+        </CardContent>
+      </Link>
+    </Card>
+  )
+}
