@@ -44,7 +44,11 @@ export function ProjectDetail({
   const [comments, setComments] = useState(initialComments)
   const [newComment, setNewComment] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
-  const [liked, setLiked] = useState(project.user_has_liked || false)
+  // Client-side like detection: use profile ID from auth context
+  const clientLiked = profile?.id
+    ? (project.liked_by_profile_ids || []).includes(profile.id)
+    : false
+  const [liked, setLiked] = useState(project.user_has_liked || clientLiked)
   const [likeCount, setLikeCount] = useState(project.like_count || 0)
   const [likeLoading, setLikeLoading] = useState(false)
 
@@ -91,12 +95,16 @@ export function ProjectDetail({
     } else {
       const { error } = await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
       if (error) {
-        console.error("Like failed:", error)
-        setLiked(prevLiked)
-        setLikeCount(prevCount)
-        toast.error(error.message || "Failed to like")
-        setLikeLoading(false)
-        return
+        if (error.code === "23505") {
+          console.log("Like already exists, treating as success")
+        } else {
+          console.error("Like failed:", error)
+          setLiked(prevLiked)
+          setLikeCount(prevCount)
+          toast.error(error.message || "Failed to like")
+          setLikeLoading(false)
+          return
+        }
       }
     }
     setLikeLoading(false)

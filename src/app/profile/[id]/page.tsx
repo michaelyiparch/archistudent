@@ -22,7 +22,7 @@ async function getProfile(id: string) {
       *,
       project_images (url, sort_order),
       reviews (overall_rating),
-      likes (id)
+      likes (id, user_id)
     `)
     .eq("user_id", id)
     .order("created_at", { ascending: false })
@@ -44,7 +44,7 @@ async function getProfile(id: string) {
   }
 
   const transformedProjects = (projects || []).map((p: Record<string, unknown>) => {
-    const likes = (p.likes as Array<{ id: string }>) || []
+    const likes = (p.likes as Array<{ id: string; user_id: string }>) || []
     const reviews = (p.reviews as Array<{ overall_rating: number }>) || []
     const images = (p.project_images as Array<{ url: string; sort_order: number }>) || []
 
@@ -57,6 +57,7 @@ async function getProfile(id: string) {
       ...p,
       like_count: likes.length,
       review_count: reviews.length,
+      liked_by_profile_ids: likes.map((l) => l.user_id),
       avg_rating: avgRating,
       cover_image_url: [...images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
     } as Project

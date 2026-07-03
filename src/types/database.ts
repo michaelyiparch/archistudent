@@ -60,6 +60,7 @@ export interface Project {
   review_count?: number
   like_count?: number
   user_has_liked?: boolean
+  liked_by_profile_ids?: string[]
   avg_rating?: number
 }
 

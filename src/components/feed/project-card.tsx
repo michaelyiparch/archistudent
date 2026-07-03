@@ -32,8 +32,15 @@ export function ProjectCard({ project }: { project: Project }) {
     toast.success("Project deleted")
     router.refresh()
   }
+  // Client-side like detection: use profile ID from auth context to check
+  // This works even when the server couldn't determine the user's session
+  const clientLiked = currentProfile?.id
+    ? (project.liked_by_profile_ids || []).includes(currentProfile.id)
+    : false
+  const effectiveLiked = project.user_has_liked || clientLiked
+
   const [liked, setLiked] = useOptimistic(
-    project.user_has_liked || false,
+    effectiveLiked,
     (_, next: boolean) => next
   )
   const [likeCount, setLikeCount] = useState(project.like_count || 0)
@@ -92,11 +99,16 @@ export function ProjectCard({ project }: { project: Project }) {
     } else {
       const { error } = await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
       if (error) {
-        console.error("Like failed:", error)
-        setLikeCount(prevCount)
-        toast.error(error.message || "Failed to like")
-        setPending(false)
-        return
+        // Duplicate key means the like already exists — that's fine, treat as success
+        if (error.code === "23505") {
+          console.log("Like already exists, treating as success")
+        } else {
+          console.error("Like failed:", error)
+          setLikeCount(prevCount)
+          toast.error(error.message || "Failed to like")
+          setPending(false)
+          return
+        }
       }
     }
 

@@ -42,6 +42,7 @@ async function getProjects(): Promise<Project[]> {
       like_count: likes.length,
       review_count: reviews.length,
       user_has_liked: profileId ? likes.some((l) => l.user_id === profileId) : false,
+      liked_by_profile_ids: likes.map((l) => l.user_id),
       avg_rating: avgRating,
       cover_image_url: [...images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
     } as Project
