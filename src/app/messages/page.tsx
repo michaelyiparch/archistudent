@@ -180,7 +180,7 @@ export default function MessagesPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{conv.profile.full_name}</p>
-                    <p className="text-xs text-zinc-500 truncate">{conv.lastMessage.slice(0, 40)}</p>
+                    <p className="text-xs text-zinc-500 truncate">{conv.lastMessage?.slice(0, 40) || ""}</p>
                   </div>
                 </button>
               ))}
@@ -212,12 +212,6 @@ export default function MessagesPage() {
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {messages.map((msg) => {
-                      const isMine = (msg.sender as { id: string })?.id === selectedId ? false :
-                        (msg.sender as { id: string })?.id || false
-                      const senderProfile = msg.sender as { id: string; full_name: string; avatar_url: string | null; role: string } | null
-                      const myMsg = msg.sender_id !== selectedId
-
-                      // Actually let's just check if sender_id matches selectedId
                       const fromThem = msg.sender_id === selectedId
 
                       return (
@@ -249,7 +243,7 @@ export default function MessagesPage() {
                       className="min-h-10 resize-none"
                       rows={1}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
+                        if (e.key === "Enter" && !e.shiftKey && !(e.nativeEvent as KeyboardEvent).isComposing) {
                           e.preventDefault()
                           handleSend()
                         }

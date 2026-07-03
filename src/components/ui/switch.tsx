@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 
 function Switch({
   className,
-  checked,
+  checked: controlledChecked,
   onCheckedChange,
   disabled,
   ...props
@@ -15,13 +15,24 @@ function Switch({
   onCheckedChange?: (checked: boolean) => void
   disabled?: boolean
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange">) {
+  const [internalChecked, setInternalChecked] = React.useState(false)
+  const isControlled = controlledChecked !== undefined
+  const checked = isControlled ? controlledChecked : internalChecked
+
+  const handleClick = () => {
+    if (disabled) return
+    const next = !checked
+    if (!isControlled) setInternalChecked(next)
+    onCheckedChange?.(next)
+  }
+
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       disabled={disabled}
-      onClick={() => onCheckedChange?.(!checked)}
+      onClick={handleClick}
       className={cn(
         "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
         checked ? "bg-zinc-900" : "bg-zinc-200",

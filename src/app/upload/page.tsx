@@ -19,6 +19,7 @@ import type { ProjectCategory, ProjectStage } from "@/types/database"
 import Link from "next/link"
 
 const ACCEPTED_IMAGES = "image/jpeg,image/png,image/webp,image/heic"
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"]
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 interface UploadImage {
@@ -43,7 +44,11 @@ export default function UploadPage() {
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     const newImages: UploadImage[] = files
-      .filter((f) => f.size <= MAX_FILE_SIZE)
+      .filter((f) => {
+        if (f.size > MAX_FILE_SIZE) return false
+        if (!ACCEPTED_TYPES.includes(f.type)) return false
+        return true
+      })
       .map((file) => ({
         file,
         preview: URL.createObjectURL(file),
@@ -51,7 +56,7 @@ export default function UploadPage() {
       }))
 
     if (newImages.length < files.length) {
-      toast.warning("Some files were too large (>10MB) and were skipped")
+      toast.warning("Some files were skipped (invalid type or >10MB)")
     }
 
     setImages((prev) => [...prev, ...newImages].slice(0, 10)) // Max 10 images

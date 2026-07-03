@@ -34,7 +34,7 @@ export default function ReviewPage() {
   const { user, profile, loading: authLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
-  const projectId = params.projectId as string
+  const projectId = params?.projectId as string
 
   const [project, setProject] = useState<Project | null>(null)
   const [ratings, setRatings] = useState<RatingState>({
@@ -137,7 +137,7 @@ export default function ReviewPage() {
           <div className="flex gap-4 items-center bg-zinc-50 rounded-lg p-4 mb-8">
             <div className="h-16 w-24 rounded-lg overflow-hidden bg-zinc-200 flex-shrink-0">
               {coverUrl ? (
-                <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+                <img src={coverUrl} alt={`${project.title} cover`} className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-2xl">🏛️</div>
               )}

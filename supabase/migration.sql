@@ -140,18 +140,22 @@ CREATE POLICY "projects_are_readable_by_all"
   ON public.projects FOR SELECT USING (true);
 
 CREATE POLICY "projects_are_insertable_by_authenticated"
-  ON public.projects FOR INSERT WITH CHECK (auth.uid() IN (
-    SELECT user_id FROM public.profiles WHERE id = user_id
+  ON public.projects FOR INSERT WITH CHECK (EXISTS (
+    SELECT 1 FROM public.profiles WHERE profiles.user_id = auth.uid()
   ));
 
 CREATE POLICY "projects_are_updatable_by_owner"
-  ON public.projects FOR UPDATE USING (auth.uid() IN (
-    SELECT user_id FROM public.profiles WHERE id = user_id
+  ON public.projects FOR UPDATE USING (EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.id = projects.user_id
+    AND profiles.user_id = auth.uid()
   ));
 
 CREATE POLICY "projects_are_deletable_by_owner"
-  ON public.projects FOR DELETE USING (auth.uid() IN (
-    SELECT user_id FROM public.profiles WHERE id = user_id
+  ON public.projects FOR DELETE USING (EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.id = projects.user_id
+    AND profiles.user_id = auth.uid()
   ));
 
 -- project_images: same as projects ----------------------
@@ -201,16 +205,12 @@ CREATE POLICY "likes_are_readable_by_all"
 
 CREATE POLICY "likes_are_insertable_by_authenticated"
   ON public.likes FOR INSERT WITH CHECK (
-    auth.uid() IN (
-      SELECT user_id FROM public.profiles WHERE id = user_id
-    )
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.user_id = auth.uid())
   );
 
 CREATE POLICY "likes_are_deletable_by_owner"
   ON public.likes FOR DELETE USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.profiles WHERE id = user_id
-    )
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.user_id = auth.uid())
   );
 
 -- comments: everyone can read, authenticated can write ---
@@ -219,16 +219,12 @@ CREATE POLICY "comments_are_readable_by_all"
 
 CREATE POLICY "comments_are_insertable_by_authenticated"
   ON public.comments FOR INSERT WITH CHECK (
-    auth.uid() IN (
-      SELECT user_id FROM public.profiles WHERE id = user_id
-    )
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.user_id = auth.uid())
   );
 
 CREATE POLICY "comments_are_deletable_by_owner"
   ON public.comments FOR DELETE USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.profiles WHERE id = user_id
-    )
+    EXISTS (SELECT 1 FROM public.profiles WHERE profiles.user_id = auth.uid())
   );
 
 -- ============================================================

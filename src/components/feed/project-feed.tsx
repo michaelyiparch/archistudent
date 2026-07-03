@@ -7,6 +7,11 @@ async function getProjects(): Promise<Project[]> {
 
   // Get current user for like status
   const { data: { user } } = await supabase.auth.getUser()
+  let profileId: string | null = null
+  if (user) {
+    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
+    profileId = profileData?.id || null
+  }
 
   const { data: projects, error } = await supabase
     .from("projects")
@@ -27,7 +32,7 @@ async function getProjects(): Promise<Project[]> {
     const reviews = (p.reviews as Array<{ id: string; overall_rating: number }>) || []
     const images = (p.project_images as Array<{ id: string; url: string; caption: string | null; sort_order: number }>) || []
 
-    const ratings = reviews.map((r) => r.overall_rating).filter(Boolean)
+    const ratings = reviews.map((r) => r.overall_rating).filter((r) => r != null)
     const avgRating = ratings.length > 0
       ? ratings.reduce((a, b) => a + b, 0) / ratings.length
       : null
@@ -36,9 +41,9 @@ async function getProjects(): Promise<Project[]> {
       ...p,
       like_count: likes.length,
       review_count: reviews.length,
-      user_has_liked: user ? likes.some((l) => l.user_id === user.id) : false,
+      user_has_liked: profileId ? likes.some((l) => l.user_id === profileId) : false,
       avg_rating: avgRating,
-      cover_image_url: images.sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
+      cover_image_url: [...images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
     } as Project
   })
 }

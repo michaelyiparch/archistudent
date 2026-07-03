@@ -10,6 +10,14 @@ import type { Project, Profile } from "@/types/database"
 async function searchContent(query: string) {
   const supabase = await createClient()
 
+  // Get current user for like status
+  const { data: { user } } = await supabase.auth.getUser()
+  let profileId: string | null = null
+  if (user) {
+    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
+    profileId = profileData?.id || null
+  }
+
   // Search projects by title and description
   const { data: projects, error } = await supabase
     .from("projects")
@@ -18,7 +26,7 @@ async function searchContent(query: string) {
       profiles:user_id (id, full_name, avatar_url, university_or_firm, role, verified_professional),
       project_images (url, sort_order),
       reviews (overall_rating),
-      likes (id)
+      likes (id, user_id)
     `)
     .ilike("title", `%${query}%`)
     .order("created_at", { ascending: false })
@@ -35,7 +43,7 @@ async function searchContent(query: string) {
         profiles:user_id (id, full_name, avatar_url, university_or_firm, role, verified_professional),
         project_images (url, sort_order),
         reviews (overall_rating),
-        likes (id)
+        likes (id, user_id)
       `)
       .ilike("description", `%${query}%`)
       .order("created_at", { ascending: false })
@@ -55,11 +63,11 @@ async function searchContent(query: string) {
     .limit(20)
 
   const transformedProjects = (allProjects || []).map((p: Record<string, unknown>) => {
-    const likes = (p.likes as Array<{ id: string }>) || []
+    const likes = (p.likes as Array<{ id: string; user_id: string }>) || []
     const reviews = (p.reviews as Array<{ overall_rating: number }>) || []
     const images = (p.project_images as Array<{ url: string; sort_order: number }>) || []
 
-    const ratings = reviews.map((r) => r.overall_rating).filter(Boolean)
+    const ratings = reviews.map((r) => r.overall_rating).filter((r) => r != null)
     const avgRating = ratings.length > 0
       ? ratings.reduce((a, b) => a + b, 0) / ratings.length
       : null
@@ -68,9 +76,9 @@ async function searchContent(query: string) {
       ...p,
       like_count: likes.length,
       review_count: reviews.length,
-      user_has_liked: false,
+      user_has_liked: profileId ? likes.some((l) => l.user_id === profileId) : false,
       avg_rating: avgRating,
-      cover_image_url: images.sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
+      cover_image_url: [...images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
     } as Project
   })
 

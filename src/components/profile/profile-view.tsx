@@ -166,7 +166,7 @@ export function ProfileView({
             {/* Contact form */}
             {showContact && currentProfile && (
               <div className="mt-4 p-4 bg-white rounded-xl border space-y-3">
-                <p className="text-sm font-medium">Send a message to {profile.full_name.split(" ")[0]}</p>
+                <p className="text-sm font-medium">Send a message to {profile.full_name?.split(" ")[0] || profile.full_name || "them"}</p>
                 <Textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}

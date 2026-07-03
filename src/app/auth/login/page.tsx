@@ -24,11 +24,16 @@ export default function LoginPage() {
   )
 }
 
+function isSafeRedirect(url: string): boolean {
+  return url.startsWith("/") && !url.startsWith("//") && !url.startsWith("\\\\")
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered")
-  const redirectTo = searchParams.get("redirect") || "/"
+  const rawRedirect = searchParams.get("redirect") || "/"
+  const redirectTo = isSafeRedirect(rawRedirect) ? rawRedirect : "/"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -46,7 +51,6 @@ function LoginForm() {
       toast.error(error.message)
     } else {
       router.push(redirectTo)
-      router.refresh()
     }
     setLoading(false)
   }
@@ -82,6 +86,17 @@ function LoginForm() {
             .eq("id", pd.id)
 
           if (updateErr) console.error("Profile update error:", updateErr)
+        } else {
+          // Profile not auto-created by trigger — create it manually
+          const { error: insertErr } = await supabase
+            .from("profiles")
+            .insert({
+              user_id: result.data.user.id,
+              full_name: fullName.trim() || email.split("@")[0],
+              role: role,
+            })
+
+          if (insertErr) console.error("Profile insert error:", insertErr)
         }
       } catch (e) {
         console.error("Profile setup error:", e)
@@ -89,16 +104,19 @@ function LoginForm() {
 
       toast.success("Welcome to ArchiStudent!")
       router.push(redirectTo)
-      router.refresh()
+    } else {
+      // No user returned and no error — email confirmation may be required
+      toast.success("Check your email to confirm your account, then sign in.")
     }
     setLoading(false)
   }
 
   const handleGoogleSignIn = async () => {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback`,
       },
     })
     if (error) toast.error(error.message)

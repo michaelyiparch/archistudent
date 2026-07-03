@@ -21,6 +21,7 @@ import {
   Lightbulb,
   PenTool,
   Eye,
+  Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CATEGORY_LABELS, STAGE_LABELS } from "@/types/database"
@@ -47,7 +48,7 @@ export function ProjectDetail({
   const [likeCount, setLikeCount] = useState(project.like_count || 0)
   const [likeLoading, setLikeLoading] = useState(false)
 
-  const images = (project.project_images || []).sort((a, b) => a.sort_order - b.sort_order)
+  const images = [...(project.project_images || [])].sort((a, b) => a.sort_order - b.sort_order)
   const authorProfile = project.profiles
 
   const handleLike = async () => {
@@ -60,17 +61,35 @@ export function ProjectDetail({
     if (likeLoading) return
     setLikeLoading(true)
 
-    const supabase = createClient()
-    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
-    if (!profileData) { setLikeLoading(false); return }
+    const prevLiked = liked
+    const prevCount = likeCount
 
     setLiked(!liked)
     setLikeCount((c) => c + (liked ? -1 : 1))
 
+    const supabase = createClient()
+    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
+    if (!profileData) {
+      setLiked(prevLiked)
+      setLikeCount(prevCount)
+      setLikeLoading(false)
+      return
+    }
+
     if (liked) {
-      await supabase.from("likes").delete().eq("project_id", project.id).eq("user_id", profileData.id)
+      const { error } = await supabase.from("likes").delete().eq("project_id", project.id).eq("user_id", profileData.id)
+      if (error) {
+        setLiked(prevLiked)
+        setLikeCount(prevCount)
+        toast.error("Failed to unlike")
+      }
     } else {
-      await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
+      const { error } = await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
+      if (error) {
+        setLiked(prevLiked)
+        setLikeCount(prevCount)
+        toast.error("Failed to like")
+      }
     }
     setLikeLoading(false)
   }
@@ -102,8 +121,41 @@ export function ProjectDetail({
     setCommentLoading(false)
   }
 
-  const nextImage = () => setCurrentImage((i) => (i + 1) % images.length)
-  const prevImage = () => setCurrentImage((i) => (i - 1 + images.length) % images.length)
+  const isAdmin = profile?.is_admin === true
+  const isOwner = profile?.id && project.user_id === profile.id
+  const canDeleteProject = isAdmin || isOwner
+
+  const handleDeleteProject = async () => {
+    if (!confirm("Delete this entire project? This cannot be undone.")) return
+    const supabase = createClient()
+    const { error } = await supabase.from("projects").delete().eq("id", project.id)
+    if (error) { toast.error("Failed to delete"); return }
+    toast.success("Project deleted")
+    router.push("/")
+    router.refresh()
+  }
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm("Delete this review?")) return
+    const supabase = createClient()
+    const { error } = await supabase.from("reviews").delete().eq("id", reviewId)
+    if (error) { toast.error("Failed to delete"); return }
+    toast.success("Review deleted")
+    router.refresh()
+  }
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("Delete this comment?")) return
+    const supabase = createClient()
+    const { error } = await supabase.from("comments").delete().eq("id", commentId)
+    if (error) { toast.error("Failed to delete"); return }
+    setComments((prev) => prev.filter((c) => c.id !== commentId))
+    toast.success("Comment deleted")
+    router.refresh()
+  }
+
+  const nextImage = () => { if (images.length === 0) return; setCurrentImage((i) => (i + 1) % images.length) }
+  const prevImage = () => { if (images.length === 0) return; setCurrentImage((i) => (i - 1 + images.length) % images.length) }
 
   return (
     <main className="container mx-auto px-4 py-8 max-w-5xl">
@@ -163,7 +215,13 @@ export function ProjectDetail({
           <div>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold">{project.title}</h1>
+                <h1 className="text-2xl font-bold">
+                  {project.title}
+                  {canDeleteProject && (
+                    <button onClick={handleDeleteProject} className="ml-2 text-red-400 hover:text-red-600 inline-block" title="Delete project">
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  )}</h1>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge>{CATEGORY_LABELS[project.category]}</Badge>
                   <Badge variant="secondary">{STAGE_LABELS[project.stage]}</Badge>
@@ -263,7 +321,14 @@ export function ProjectDetail({
                             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-sm text-zinc-700 mt-0.5">{comment.content}</p>
+                        <p className="text-sm text-zinc-700 mt-0.5">
+                          {comment.content}
+                          {(isAdmin || comment.user_id === profile?.id) && (
+                            <button onClick={() => handleDeleteComment(comment.id)} className="ml-2 text-red-400 hover:text-red-600 inline align-middle" title="Delete comment">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </p>
                       </div>
                     </div>
                   )
@@ -289,9 +354,11 @@ export function ProjectDetail({
                 <p className="text-xs text-zinc-500">{authorProfile?.university_or_firm || authorProfile?.role}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="w-full" onClick={() => router.push(`/profile/${authorProfile?.id}`)}>
-              View Profile
-            </Button>
+            {authorProfile?.id ? (
+              <Button variant="outline" size="sm" className="w-full" onClick={() => router.push(`/profile/${authorProfile.id}`)}>
+                View Profile
+              </Button>
+            ) : null}
           </div>
 
           {/* Professional Reviews Section */}
@@ -332,10 +399,17 @@ export function ProjectDetail({
                         <p className="text-sm font-medium">{review.profiles?.full_name}</p>
                         <p className="text-xs text-zinc-500">{review.profiles?.university_or_firm || "Architect"}</p>
                       </div>
-                      <div className="ml-auto flex items-center gap-1">
+                      <div className="ml-auto flex items-center gap-2">
+                      {(isAdmin || review.reviewer_id === profile?.id) && (
+                        <button onClick={() => handleDeleteReview(review.id)} className="text-red-400 hover:text-red-600" title="Delete review">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
                         <span className="font-semibold text-sm">{review.overall_rating}/5</span>
                       </div>
+                    </div>
                     </div>
 
                     {/* Rubric grid */}

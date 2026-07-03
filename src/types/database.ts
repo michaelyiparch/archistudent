@@ -9,6 +9,7 @@ export interface Profile {
   bio: string | null
   avatar_url: string | null
   verified_professional: boolean
+  is_admin: boolean
   skills: string[] | null
   education: string | null
   open_to_work: boolean

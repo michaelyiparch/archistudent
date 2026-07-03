@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Heart, MessageSquare, Star } from "lucide-react"
+import { Heart, MessageSquare, Star, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useState, useOptimistic, startTransition } from "react"
 import { CATEGORY_LABELS, STAGE_LABELS } from "@/types/database"
@@ -16,8 +16,22 @@ import type { Project } from "@/types/database"
 import { cn } from "@/lib/utils"
 
 export function ProjectCard({ project }: { project: Project }) {
-  const { user } = useAuth()
+  const { user, profile: currentProfile } = useAuth()
   const router = useRouter()
+  const isAdmin = currentProfile?.is_admin === true
+  const isOwner = currentProfile?.id && project.user_id === currentProfile.id
+  const canDelete = isAdmin || isOwner
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm("Delete this project?")) return
+    const supabase = createClient()
+    const { error } = await supabase.from("projects").delete().eq("id", project.id)
+    if (error) { toast.error("Failed to delete"); return }
+    toast.success("Project deleted")
+    router.refresh()
+  }
   const [liked, setLiked] = useOptimistic(
     project.user_has_liked || false,
     (_, next: boolean) => next
@@ -47,6 +61,9 @@ export function ProjectCard({ project }: { project: Project }) {
     if (pending) return
     setPending(true)
 
+    const prevLiked = liked
+    const prevCount = likeCount
+
     startTransition(() => {
       setLiked(!liked)
       setLikeCount((c) => c + (liked ? -1 : 1))
@@ -56,14 +73,24 @@ export function ProjectCard({ project }: { project: Project }) {
     const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
 
     if (!profileData) {
+      // Revert optimistic update
+      setLikeCount(prevCount)
       setPending(false)
       return
     }
 
     if (liked) {
-      await supabase.from("likes").delete().eq("project_id", project.id).eq("user_id", profileData.id)
+      const { error } = await supabase.from("likes").delete().eq("project_id", project.id).eq("user_id", profileData.id)
+      if (error) {
+        setLikeCount(prevCount)
+        toast.error("Failed to unlike")
+      }
     } else {
-      await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
+      const { error } = await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
+      if (error) {
+        setLikeCount(prevCount)
+        toast.error("Failed to like")
+      }
     }
 
     setPending(false)
@@ -87,13 +114,19 @@ export function ProjectCard({ project }: { project: Project }) {
           )}
 
           {/* Rating badge */}
-          {project.avg_rating && (
+          {project.avg_rating != null && project.avg_rating > 0 && (
             <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur px-2 py-1 rounded-full text-xs font-medium">
               <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
               {project.avg_rating.toFixed(1)}
             </div>
           )}
 
+          {/* Delete button — top right, below rating if present */}
+          {canDelete && (
+            <button onClick={handleDelete} className={`absolute right-3 z-20 h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg ${project.avg_rating != null && project.avg_rating > 0 ? "top-11" : "top-3"}`} title="Delete project">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
           {/* Category badge */}
           <div className="absolute top-3 left-3">
             <Badge variant="secondary" className="bg-white/90 backdrop-blur text-xs">

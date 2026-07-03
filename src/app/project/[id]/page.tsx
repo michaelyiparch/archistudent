@@ -54,7 +54,7 @@ async function getProject(id: string): Promise<{
   const images = project.project_images || []
   const profile = project.profiles
 
-  const ratings = reviewList.map((r) => r.overall_rating).filter(Boolean)
+  const ratings = reviewList.map((r) => r.overall_rating).filter((r) => r != null)
   const avgRating = ratings.length > 0
     ? ratings.reduce((a, b) => a + b, 0) / ratings.length
     : null
@@ -64,7 +64,7 @@ async function getProject(id: string): Promise<{
     like_count: likeList.length,
     review_count: reviewList.length,
     avg_rating: avgRating,
-    cover_image_url: images[0]?.url || project.cover_image_url,
+    cover_image_url: images.sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)[0]?.url || project.cover_image_url,
     profiles: profile,
   }
 

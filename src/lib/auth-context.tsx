@@ -35,19 +35,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase])
 
   useEffect(() => {
+    let cancelled = false
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (cancelled) return
       setUser(session?.user ?? null)
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        try {
+          await fetchProfile(session.user.id)
+        } catch (err) {
+          console.error("Failed to fetch profile on init:", err)
+        }
       }
       setLoading(false)
+    }).catch((err) => {
+      console.error("Failed to get session:", err)
+      if (!cancelled) setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (cancelled) return
         setUser(session?.user ?? null)
         if (session?.user) {
-          await fetchProfile(session.user.id)
+          try {
+            await fetchProfile(session.user.id)
+          } catch (err) {
+            console.error("Failed to fetch profile on auth change:", err)
+          }
         } else {
           setProfile(null)
         }
@@ -55,7 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [supabase, fetchProfile])
 
   const refreshProfile = useCallback(async () => {

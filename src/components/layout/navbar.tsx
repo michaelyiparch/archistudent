@@ -30,11 +30,16 @@ export function Navbar() {
   const handleSignOut = async () => {
     setSigningOut(true)
     const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/")
-    router.refresh()
-    toast.success("Signed out")
-    setSigningOut(false)
+    try {
+      await supabase.auth.signOut()
+      toast.success("Signed out")
+      router.push("/")
+      router.refresh()
+    } catch {
+      toast.error("Failed to sign out")
+    } finally {
+      setSigningOut(false)
+    }
   }
 
   const handleSearch = (e: React.FormEvent) => {
@@ -99,25 +104,27 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {loading ? (
             <div className="h-8 w-8 rounded-full bg-zinc-100 animate-pulse" />
-          ) : user && profile ? (
+          ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger>
                 <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-transparent hover:ring-zinc-200 transition-all">
-                  <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name} />
+                  <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
                   <AvatarFallback className="text-xs bg-zinc-900 text-white">{initials}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{profile.full_name || "User"}</p>
-                    <p className="text-xs text-zinc-500 capitalize leading-none mt-1">{profile.role}</p>
+                    <p className="text-sm font-medium leading-none">{profile?.full_name || "User"}</p>
+                    <p className="text-xs text-zinc-500 capitalize leading-none mt-1">{profile?.role || "user"}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {profile?.id && (
                 <DropdownMenuItem onClick={() => router.push(`/profile/${profile.id}`)}>
                   <User className="mr-2 h-4 w-4" /> Profile
                 </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => router.push("/profile/edit")}>
                   <User className="mr-2 h-4 w-4" /> Edit Profile
                 </DropdownMenuItem>

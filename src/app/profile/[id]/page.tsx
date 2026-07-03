@@ -48,7 +48,7 @@ async function getProfile(id: string) {
     const reviews = (p.reviews as Array<{ overall_rating: number }>) || []
     const images = (p.project_images as Array<{ url: string; sort_order: number }>) || []
 
-    const ratings = reviews.map((r) => r.overall_rating).filter(Boolean)
+    const ratings = reviews.map((r) => r.overall_rating).filter((r) => r != null)
     const avgRating = ratings.length > 0
       ? ratings.reduce((a, b) => a + b, 0) / ratings.length
       : null
@@ -58,7 +58,7 @@ async function getProfile(id: string) {
       like_count: likes.length,
       review_count: reviews.length,
       avg_rating: avgRating,
-      cover_image_url: images.sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
+      cover_image_url: [...images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
     } as Project
   })
 

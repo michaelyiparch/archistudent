@@ -92,10 +92,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 
 function DialogFooter({
   className,
-  showCloseButton = false,
   children,
-  ...props
-}: React.ComponentProps<"div"> & {
+  showCloseButton = false,
+  ...otherProps
+}: Omit<React.ComponentProps<"div">, "showCloseButton"> & {
   showCloseButton?: boolean
 }) {
   return (
@@ -105,7 +105,7 @@ function DialogFooter({
         "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
         className
       )}
-      {...props}
+      {...otherProps}
     >
       {children}
       {showCloseButton && (
