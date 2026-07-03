@@ -68,27 +68,35 @@ export function ProjectDetail({
     setLikeCount((c) => c + (liked ? -1 : 1))
 
     const supabase = createClient()
-    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
-    if (!profileData) {
+    const { data: profileData, error: profileError } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
+    if (profileError || !profileData) {
+      console.error("Profile lookup failed:", profileError)
       setLiked(prevLiked)
       setLikeCount(prevCount)
       setLikeLoading(false)
+      toast.error("Could not find your profile")
       return
     }
 
     if (liked) {
       const { error } = await supabase.from("likes").delete().eq("project_id", project.id).eq("user_id", profileData.id)
       if (error) {
+        console.error("Unlike failed:", error)
         setLiked(prevLiked)
         setLikeCount(prevCount)
-        toast.error("Failed to unlike")
+        toast.error(error.message || "Failed to unlike")
+        setLikeLoading(false)
+        return
       }
     } else {
       const { error } = await supabase.from("likes").insert({ project_id: project.id, user_id: profileData.id })
       if (error) {
+        console.error("Like failed:", error)
         setLiked(prevLiked)
         setLikeCount(prevCount)
-        toast.error("Failed to like")
+        toast.error(error.message || "Failed to like")
+        setLikeLoading(false)
+        return
       }
     }
     setLikeLoading(false)
