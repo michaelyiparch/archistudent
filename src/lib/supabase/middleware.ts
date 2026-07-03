@@ -32,13 +32,9 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Only call getUser if session cookie exists (optimization)
-  const hasSessionCookie = request.cookies.get("sb-access-token") || request.cookies.get("sb-refresh-token")
-  let user = null
-  if (hasSessionCookie) {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const protectedPaths = ["/upload", "/review"]
   const authPaths = ["/auth/login"]
