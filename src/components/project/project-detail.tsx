@@ -275,11 +275,6 @@ export function ProjectDetail({
               <Heart className={cn("mr-1.5 h-4 w-4", liked && "fill-current")} />
               {likeCount}
             </Button>
-            {user && profile?.role === "professional" && (
-              <Button size="sm" onClick={() => router.push(`/review/${project.id}`)}>
-                <Award className="mr-1.5 h-4 w-4" /> Write Professional Review
-              </Button>
-            )}
           </div>
 
           <Separator />
@@ -391,6 +386,11 @@ export function ProjectDetail({
                 Professional Reviews{" "}
                 <span className="text-zinc-400 font-normal">({reviews.length})</span>
               </h3>
+              {user && profile?.role === "professional" && (
+                <Button size="sm" className="ml-auto" onClick={() => router.push(`/review/${project.id}`)}>
+                  <Award className="mr-1.5 h-4 w-4" /> Write Review
+                </Button>
+              )}
             </div>
 
             {reviews.length === 0 ? (
