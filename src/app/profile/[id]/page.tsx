@@ -15,33 +15,18 @@ async function getProfile(id: string) {
 
   if (error || !profile) return null
 
-  // Get user's projects
-  const { data: projects } = await supabase
-    .from("projects")
-    .select(`
-      *,
-      project_images (url, sort_order),
-      reviews (overall_rating),
-      likes (id, user_id)
-    `)
-    .eq("user_id", id)
-    .order("created_at", { ascending: false })
-    .limit(20)
+  // Fetch projects and reviews in parallel
+  const [{ data: projects }, reviewsResult] = await Promise.all([
+    supabase.from("projects")
+      .select(`*, project_images (url, sort_order), reviews (overall_rating), likes (id, user_id)`)
+      .eq("user_id", id).order("created_at", { ascending: false }).limit(20),
+    profile.role === "professional"
+      ? supabase.from("reviews").select(`*, projects:project_id (id, title, cover_image_url), profiles:reviewer_id (full_name)`)
+          .eq("reviewer_id", id).order("created_at", { ascending: false })
+      : Promise.resolve({ data: null }),
+  ])
 
-  // Get reviews written by this professional
-  let reviewsWritten: Review[] = []
-  if (profile.role === "professional") {
-    const { data: reviews } = await supabase
-      .from("reviews")
-      .select(`
-        *,
-        projects:project_id (id, title, cover_image_url),
-        profiles:reviewer_id (full_name)
-      `)
-      .eq("reviewer_id", id)
-      .order("created_at", { ascending: false })
-    reviewsWritten = (reviews as Review[]) || []
-  }
+  const reviewsWritten = profile.role === "professional" ? ((reviewsResult?.data || []) as Review[]) : []
 
   const transformedProjects = (projects || []).map((p: Record<string, unknown>) => {
     const likes = (p.likes as Array<{ id: string; user_id: string }>) || []

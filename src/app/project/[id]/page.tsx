@@ -23,31 +23,19 @@ async function getProject(id: string): Promise<{
 
   if (error || !project) return null
 
-  const { data: likes } = await supabase
-    .from("likes")
-    .select("*")
-    .eq("project_id", id)
-
-  // Get reviews with reviewer profiles and attached files
-  const { data: reviews } = await supabase
-    .from("reviews")
-    .select(`
+  // Fetch likes, reviews, comments in parallel (3 queries → 1 round trip)
+  const [{ data: likes }, { data: reviews }, { data: comments }] = await Promise.all([
+    supabase.from("likes").select("*").eq("project_id", id),
+    supabase.from("reviews").select(`
       *,
       profiles:reviewer_id (id, full_name, avatar_url, university_or_firm, verified_professional),
       review_files (id, file_url, file_name, file_type, file_size)
-    `)
-    .eq("project_id", id)
-    .order("created_at", { ascending: false })
-
-  // Get comments with user profiles
-  const { data: comments } = await supabase
-    .from("comments")
-    .select(`
+    `).eq("project_id", id).order("created_at", { ascending: false }),
+    supabase.from("comments").select(`
       *,
       profiles:user_id (id, full_name, avatar_url, role)
-    `)
-    .eq("project_id", id)
-    .order("created_at", { ascending: true })
+    `).eq("project_id", id).order("created_at", { ascending: true }),
+  ])
 
   const likeList = (likes as Array<{ id: string; user_id: string }>) || []
   const reviewList = (reviews as Review[]) || []
