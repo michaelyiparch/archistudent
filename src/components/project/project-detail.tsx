@@ -190,7 +190,7 @@ export function ProjectDetail({
   const prevImage = () => { if (images.length === 0) return; setCurrentImage((i) => (i - 1 + images.length) % images.length) }
 
   return (
-    <main className="container mx-auto px-4 py-8 max-w-5xl">
+    <main className="container mx-auto px-4 py-8 max-w-5xl animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Images + Info + Comments */}
         <div className="lg:col-span-2 space-y-6">

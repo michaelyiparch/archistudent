@@ -72,14 +72,22 @@ function r(h: number, o: number, min: number, max: number) { return min + Math.a
 
 function pickPal(hash: number, idx: number) {
   const pals = [
-    { bg: "#f5f0e8", fg: "#2d2d2d", acc: "#c4a35a", bg2: "#e8e0d0" },
-    { bg: "#e8ecf1", fg: "#1a232e", acc: "#5a7da4", bg2: "#d4dbe3" },
-    { bg: "#eee9e0", fg: "#2c2219", acc: "#b8744c", bg2: "#dfd6ca" },
-    { bg: "#e6ede8", fg: "#1a2a1f", acc: "#5c8a6e", bg2: "#d0ddd3" },
-    { bg: "#f0edf4", fg: "#1f1a2e", acc: "#7c6da8", bg2: "#e0dce8" },
-    { bg: "#f4f1ec", fg: "#2a221d", acc: "#c4784e", bg2: "#e8e2d8" },
-    { bg: "#f9f6f0", fg: "#1c1917", acc: "#d97706", bg2: "#ede7db" },
-    { bg: "#edf0f3", fg: "#0f172a", acc: "#2563eb", bg2: "#dde1e7" },
+    // Warm stone + gold
+    { bg: "#f7f3ec", fg: "#2d2d2d", acc: "#c4a35a", bg2: "#ebe3d4" },
+    // Cool slate + blue
+    { bg: "#edf0f4", fg: "#1a232e", acc: "#5a7da4", bg2: "#d9dfe7" },
+    // Terracotta + clay
+    { bg: "#f5ede6", fg: "#2c2219", acc: "#c47d5c", bg2: "#e8d9ce" },
+    // Sage + olive
+    { bg: "#ecf0e8", fg: "#1a2a1f", acc: "#6d8a5e", bg2: "#d8e2d2" },
+    // Lavender + plum
+    { bg: "#f2eef6", fg: "#1f1a2e", acc: "#8b7da8", bg2: "#e3ddec" },
+    // Warm cream + amber
+    { bg: "#f8f3ec", fg: "#2a221d", acc: "#d0804e", bg2: "#ede2d4" },
+    // Bone + ochre
+    { bg: "#faf7f0", fg: "#1c1917", acc: "#b8860e", bg2: "#f0e9d8" },
+    // Cool concrete + steel
+    { bg: "#eff1f3", fg: "#0f172a", acc: "#64748b", bg2: "#e0e3e7" },
   ]
   return pals[(hash + idx * 7) % pals.length]
 }

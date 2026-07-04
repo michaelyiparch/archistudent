@@ -116,7 +116,7 @@ export function ProjectCard({ project }: { project: Project }) {
   }
 
   return (
-    <Card className="group overflow-hidden border-zinc-200 hover:border-zinc-300 hover:shadow-md transition-all">
+    <Card className="group overflow-hidden rounded-2xl border-zinc-200/60 card-hover">
       <Link href={`/project/${project.id}`}>
         {/* Cover Image */}
         <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden">
@@ -124,7 +124,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <img
               src={project.cover_image_url}
               alt={project.title}
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
