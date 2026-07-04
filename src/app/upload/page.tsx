@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { UploadCloud, X, ArrowLeft, ArrowRight, Check, ImagePlus } from "lucide-react"
+import { UploadCloud, X, ArrowLeft, ArrowRight, Check, ImagePlus, Eye, EyeOff } from "lucide-react"
 import { CATEGORY_LABELS, STAGE_LABELS } from "@/types/database"
 import type { ProjectCategory, ProjectStage } from "@/types/database"
 import Link from "next/link"
@@ -40,6 +40,7 @@ export default function UploadPage() {
   const [category, setCategory] = useState<ProjectCategory>("other")
   const [stage, setStage] = useState<ProjectStage>("concept")
   const [submitting, setSubmitting] = useState(false)
+  const [visibility, setVisibility] = useState<"public" | "private">("public")
 
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -131,6 +132,7 @@ export default function UploadPage() {
           category,
           stage,
           cover_image_url: imageUrls[0],
+          visibility,
         })
         .select("id")
         .single()
@@ -148,7 +150,10 @@ export default function UploadPage() {
 
       await supabase.from("project_images").insert(imageRows)
 
-      toast.success("Project published!")
+      const msg = visibility === "private"
+        ? "Project shared with architects for review!"
+        : "Project published!"
+      toast.success(msg)
       router.push(`/project/${project.id}`)
     } catch (err: unknown) {
       let message = "Something went wrong"
@@ -314,6 +319,39 @@ export default function UploadPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                {/* Visibility toggle */}
+                <div className="space-y-3 pt-2">
+                  <Label>Visibility</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisibility("public")}
+                      className={`p-3 rounded-xl border-2 text-sm font-medium transition-all flex items-center gap-2 ${
+                        visibility === "public"
+                          ? "border-zinc-900 bg-zinc-50 text-zinc-900"
+                          : "border-zinc-200 text-zinc-500 hover:border-zinc-300"
+                      }`}
+                    >
+                      <Eye className="h-4 w-4" /> Public
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVisibility("private")}
+                      className={`p-3 rounded-xl border-2 text-sm font-medium transition-all flex items-center gap-2 ${
+                        visibility === "private"
+                          ? "border-zinc-900 bg-zinc-50 text-zinc-900"
+                          : "border-zinc-200 text-zinc-500 hover:border-zinc-300"
+                      }`}
+                    >
+                      <EyeOff className="h-4 w-4" /> Architects Only
+                    </button>
+                  </div>
+                  {visibility === "private" && (
+                    <p className="text-xs text-zinc-500">
+                      Only you and professional architects can see this project. Architects can find it and choose to review it.
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-3 pt-4">
                 <Button variant="outline" onClick={() => setStep(1)}>
@@ -342,9 +380,13 @@ export default function UploadPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold">{title || "Untitled"}</h2>
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mt-2 flex-wrap">
                   <Badge>{CATEGORY_LABELS[category]}</Badge>
                   <Badge variant="secondary">{STAGE_LABELS[stage]}</Badge>
+                  <Badge variant="outline" className={visibility === "private" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}>
+                    {visibility === "private" ? <EyeOff className="mr-1 h-3 w-3" /> : <Eye className="mr-1 h-3 w-3" />}
+                    {visibility === "private" ? "Architects Only" : "Public"}
+                  </Badge>
                 </div>
               </div>
               <p className="text-zinc-600">{description || "No description provided."}</p>

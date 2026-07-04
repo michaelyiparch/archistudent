@@ -21,6 +21,7 @@ import {
   Lightbulb,
   PenTool,
   Eye,
+  EyeOff,
   Trash2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -241,6 +242,11 @@ export function ProjectDetail({
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge>{CATEGORY_LABELS[project.category]}</Badge>
                   <Badge variant="secondary">{STAGE_LABELS[project.stage]}</Badge>
+                  {project.visibility === "private" && (
+                    <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+                      <EyeOff className="mr-1 h-3 w-3" /> Private
+                    </Badge>
+                  )}
                   {project.avg_rating && (
                     <Badge variant="outline" className="flex items-center gap-1 border-amber-200 bg-amber-50 text-amber-800">
                       <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
@@ -457,6 +463,29 @@ export function ProjectDetail({
 
                     {/* Review comment */}
                     <p className="text-sm text-zinc-700 leading-relaxed">{review.comment}</p>
+
+                    {/* Attached files */}
+                    {review.review_files && review.review_files.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {review.review_files.map((file) => (
+                          <a
+                            key={file.id}
+                            href={file.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs bg-zinc-100 hover:bg-zinc-200 rounded-lg px-3 py-1.5 transition-colors"
+                          >
+                            {file.file_type === "application/pdf" ? (
+                              <span className="text-red-500 font-medium">PDF</span>
+                            ) : (
+                              <img src={file.file_url} alt="" className="h-10 w-14 object-cover rounded" />
+                            )}
+                            <span className="text-zinc-600 max-w-[120px] truncate">{file.file_name}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="text-xs text-zinc-400 mt-2">
                       {formatDistanceToNow(new Date(review.created_at), { addSuffix: true })}
                     </p>

@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Home, Upload, Search, LogOut, User, Menu, X, Compass, Mail, Users } from "lucide-react"
+import { Home, Upload, Search, LogOut, User, Menu, X, Compass, Mail, Users, ClipboardList } from "lucide-react"
 import { toast } from "sonner"
 
 export function Navbar() {
@@ -130,6 +130,9 @@ export function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/messages")}>
                   <Mail className="mr-2 h-4 w-4" /> Messages
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/requests")}>
+                  <ClipboardList className="mr-2 h-4 w-4" /> Review Requests
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/upload")}>
                   <Upload className="mr-2 h-4 w-4" /> Upload Project

@@ -19,6 +19,8 @@ import {
 import { format } from "date-fns"
 import Link from "next/link"
 import { CATEGORY_LABELS } from "@/types/database"
+import { RequestReviewDialog } from "@/components/review-requests/request-review-dialog"
+import { FileText } from "lucide-react"
 import type { Profile, Project, Review } from "@/types/database"
 
 export function ProfileView({
@@ -35,6 +37,7 @@ export function ProfileView({
   const isOwner = currentProfile?.id === profile.id
 
   const [showContact, setShowContact] = useState(false)
+  const [showRequestDialog, setShowRequestDialog] = useState(false)
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
 
@@ -153,9 +156,16 @@ export function ProfileView({
                   Edit Profile
                 </Button>
               ) : currentProfile ? (
-                <Button size="sm" onClick={() => setShowContact(!showContact)}>
-                  <Mail className="mr-1.5 h-4 w-4" /> Contact
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => setShowContact(!showContact)}>
+                    <Mail className="mr-1.5 h-4 w-4" /> Contact
+                  </Button>
+                  {currentProfile.role === "student" && profile.role === "professional" && (
+                    <Button size="sm" variant="secondary" onClick={() => setShowRequestDialog(true)}>
+                      <FileText className="mr-1.5 h-4 w-4" /> Request Review
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <Button size="sm" variant="outline" onClick={() => router.push("/auth/login")}>
                   Sign in to contact
@@ -276,6 +286,13 @@ export function ProfileView({
           </TabsContent>
         )}
       </Tabs>
+
+      <RequestReviewDialog
+        architectId={profile.id}
+        architectName={profile.full_name}
+        open={showRequestDialog}
+        onOpenChange={setShowRequestDialog}
+      />
     </main>
   )
 }

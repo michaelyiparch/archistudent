@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { Suspense, useState, useEffect } from "react"
+import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { createClient } from "@/lib/supabase/client"
 import { Navbar } from "@/components/layout/navbar"
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { ArrowLeft, Star, Lightbulb, PenTool, Eye, Award, Upload } from "lucide-react"
+import { ArrowLeft, Star, Lightbulb, PenTool, Eye, Award, Upload, Paperclip, X, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import type { Project } from "@/types/database"
@@ -30,11 +30,13 @@ interface RatingState {
   overall_rating: number
 }
 
-export default function ReviewPage() {
+function ReviewForm() {
   const { user, profile, loading: authLoading } = useAuth()
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const projectId = params?.projectId as string
+  const requestId = searchParams.get("request_id")
 
   const [project, setProject] = useState<Project | null>(null)
   const [ratings, setRatings] = useState<RatingState>({
@@ -47,6 +49,8 @@ export default function ReviewPage() {
   const [comment, setComment] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [files, setFiles] = useState<File[]>([])
+  const [uploadingFiles, setUploadingFiles] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -75,6 +79,19 @@ export default function ReviewPage() {
     }
   }, [authLoading, profile, projectId, router])
 
+  const handleAddFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || [])
+    const valid = selected.filter(f => {
+      const ok = f.type === "application/pdf" || f.type === "image/png"
+      if (!ok) toast.error(`${f.name} — only PDF and PNG allowed`)
+      if (f.size > 10 * 1024 * 1024) { toast.error(`${f.name} exceeds 10MB`); return false }
+      return ok
+    })
+    setFiles(prev => [...prev, ...valid].slice(0, 5))
+  }
+
+  const removeFile = (idx: number) => setFiles(prev => prev.filter((_, i) => i !== idx))
+
   const handleSubmit = async () => {
     const allRated = Object.values(ratings).every((r) => r > 0)
     if (!allRated) {
@@ -89,7 +106,7 @@ export default function ReviewPage() {
     setSubmitting(true)
 
     const supabase = createClient()
-    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user!.id).single()
+    const { data: profileData } = await supabase.from("profiles").select("id, user_id").eq("user_id", user!.id).single()
 
     if (!profileData) {
       toast.error("Profile not found")
@@ -97,12 +114,13 @@ export default function ReviewPage() {
       return
     }
 
-    const { error } = await supabase.from("reviews").insert({
+    // Insert review
+    const { data: review, error } = await supabase.from("reviews").insert({
       project_id: projectId,
       reviewer_id: profileData.id,
       ...ratings,
       comment: comment.trim(),
-    })
+    }).select("id").single()
 
     if (error) {
       if (error.code === "23505") {
@@ -110,11 +128,41 @@ export default function ReviewPage() {
       } else {
         toast.error(error.message)
       }
-    } else {
-      toast.success("Review submitted!")
-      router.push(`/project/${projectId}`)
+      setSubmitting(false)
+      return
     }
-    setSubmitting(false)
+
+    // Upload files
+    if (files.length > 0 && review) {
+      setUploadingFiles(true)
+      for (const file of files) {
+        const ext = file.name.split(".").pop() || "pdf"
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+        const path = `${profileData.id}/${filename}`
+        const { data: uploadData, error: uploadErr } = await supabase.storage.from("review-files").upload(path, file)
+        if (uploadErr) {
+          toast.error(`Failed to upload ${file.name}`)
+          continue
+        }
+        const { data: urlData } = supabase.storage.from("review-files").getPublicUrl(uploadData.path)
+        await supabase.from("review_files").insert({
+          review_id: review.id,
+          file_url: urlData.publicUrl,
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+        })
+      }
+      setUploadingFiles(false)
+    }
+
+    // Mark request as completed if coming from a review request
+    if (requestId) {
+      await supabase.from("review_requests").update({ status: "completed" }).eq("id", requestId)
+    }
+
+    toast.success("Review submitted!")
+    router.push(`/project/${projectId}`)
   }
 
   if (authLoading || loading || !profile) return null
@@ -126,6 +174,11 @@ export default function ReviewPage() {
     <>
       <Navbar />
       <main className="container mx-auto px-4 py-8 max-w-2xl">
+        {requestId && (
+          <div className="bg-amber-50 text-amber-800 text-sm p-3 rounded-lg mb-6 border border-amber-200">
+            You are responding to a private review request. Your review will mark it as completed.
+          </div>
+        )}
         <Link href={`/project/${projectId}`} className="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-900 mb-6">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to project
         </Link>
@@ -205,9 +258,38 @@ export default function ReviewPage() {
               placeholder="Discuss the project's strengths, areas for improvement, and specific suggestions..."
               rows={8}
             />
-            <Button onClick={handleSubmit} disabled={submitting} className="w-full">
+
+            {/* File attachments */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Paperclip className="h-4 w-4" /> Attachments (PDF/PNG, max 5)
+              </Label>
+              <input
+                type="file"
+                accept=".pdf,.png,image/png,application/pdf"
+                multiple
+                onChange={handleAddFiles}
+                className="block w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200"
+              />
+              {files.length > 0 && (
+                <div className="space-y-1.5 mt-2">
+                  {files.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm bg-zinc-50 rounded-lg px-3 py-2">
+                      <FileText className="h-4 w-4 text-zinc-400" />
+                      <span className="flex-1 truncate">{f.name}</span>
+                      <span className="text-xs text-zinc-400">{(f.size / 1024 / 1024).toFixed(1)}MB</span>
+                      <button onClick={() => removeFile(i)} className="text-zinc-400 hover:text-red-500">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Button onClick={handleSubmit} disabled={submitting || uploadingFiles} className="w-full">
               {submitting ? (
-                "Submitting..."
+                uploadingFiles ? "Uploading files..." : "Submitting..."
               ) : (
                 <><Upload className="mr-2 h-4 w-4" /> Submit Review</>
               )}
@@ -216,5 +298,17 @@ export default function ReviewPage() {
         </Card>
       </main>
     </>
+  )
+}
+
+export default function ReviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin" />
+      </div>
+    }>
+      <ReviewForm />
+    </Suspense>
   )
 }

@@ -29,6 +29,21 @@ export interface Message {
   receiver?: Pick<Profile, "id" | "full_name" | "avatar_url" | "role">
 }
 
+export interface ReviewRequest {
+  id: string
+  student_id: string
+  architect_id: string
+  project_id: string
+  message: string
+  status: "pending" | "accepted" | "completed" | "declined"
+  created_at: string
+  updated_at: string
+  // Joined
+  student?: Pick<Profile, "id" | "full_name" | "avatar_url" | "university_or_firm">
+  architect?: Pick<Profile, "id" | "full_name" | "avatar_url" | "university_or_firm">
+  project?: Pick<Project, "id" | "title" | "cover_image_url" | "category" | "stage">
+}
+
 export type ProjectCategory =
   | "residential"
   | "commercial"
@@ -52,6 +67,7 @@ export interface Project {
   category: ProjectCategory
   stage: ProjectStage
   cover_image_url: string | null
+  visibility: "public" | "private"
   created_at: string
   updated_at: string
   // Joined fields
@@ -72,6 +88,16 @@ export interface ProjectImage {
   sort_order: number
 }
 
+export interface ReviewFile {
+  id: string
+  review_id: string
+  file_url: string
+  file_name: string | null
+  file_type: "application/pdf" | "image/png"
+  file_size: number | null
+  created_at: string
+}
+
 export interface Review {
   id: string
   project_id: string
@@ -84,6 +110,7 @@ export interface Review {
   created_at: string
   // Joined
   profiles?: Pick<Profile, "id" | "full_name" | "avatar_url" | "university_or_firm" | "verified_professional">
+  review_files?: ReviewFile[]
 }
 
 export interface Like {

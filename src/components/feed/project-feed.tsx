@@ -1,19 +1,21 @@
 import { createClient } from "@/lib/supabase/server"
 import { ProjectCard } from "@/components/feed/project-card"
+import { ProjectFeedTabs } from "@/components/feed/project-feed-tabs"
 import type { Project } from "@/types/database"
 
-async function getProjects(): Promise<Project[]> {
+async function getProjects(filter: "public" | "private"): Promise<Project[]> {
   const supabase = await createClient()
 
-  // Get current user for like status
   const { data: { user } } = await supabase.auth.getUser()
   let profileId: string | null = null
+  let isProfessional = false
   if (user) {
-    const { data: profileData } = await supabase.from("profiles").select("id").eq("user_id", user.id).single()
-    profileId = profileData?.id || null
+    const { data: pd } = await supabase.from("profiles").select("id, role").eq("user_id", user.id).single()
+    profileId = pd?.id || null
+    isProfessional = pd?.role === "professional"
   }
 
-  const { data: projects, error } = await supabase
+  let query = supabase
     .from("projects")
     .select(`
       *,
@@ -24,6 +26,14 @@ async function getProjects(): Promise<Project[]> {
     `)
     .order("created_at", { ascending: false })
     .limit(30)
+
+  if (filter === "private") {
+    query = query.eq("visibility", "private")
+  } else {
+    query = query.eq("visibility", "public")
+  }
+
+  const { data: projects, error } = await query
 
   if (error || !projects) return []
 
@@ -50,33 +60,20 @@ async function getProjects(): Promise<Project[]> {
 }
 
 export async function ProjectFeed() {
-  const projects = await getProjects()
-
-  if (projects.length === 0) {
-    return (
-      <div className="text-center py-20 bg-white rounded-2xl border border-zinc-100">
-        <div className="h-20 w-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <span className="text-3xl">🏛️</span>
-        </div>
-        <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
-        <p className="text-zinc-500 max-w-sm mx-auto mb-6">
-          Be the first to share your architecture work with the community. Upload your project and get feedback from professionals.
-        </p>
-        <a
-          href="/upload"
-          className="inline-flex items-center justify-center rounded-xl bg-zinc-900 text-white px-6 py-3 text-sm font-medium hover:bg-zinc-800 transition-colors shadow-sm"
-        >
-          Share Your First Project
-        </a>
-      </div>
-    )
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  let isProfessional = false
+  if (user) {
+    const { data: pd } = await supabase.from("profiles").select("role").eq("user_id", user.id).single()
+    isProfessional = pd?.role === "professional"
   }
 
+  const publicProjects = await getProjects("public")
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
-      ))}
-    </div>
+    <ProjectFeedTabs
+      publicProjects={publicProjects}
+      isProfessional={isProfessional}
+    />
   )
 }

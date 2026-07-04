@@ -28,12 +28,13 @@ async function getProject(id: string): Promise<{
     .select("*")
     .eq("project_id", id)
 
-  // Get reviews with reviewer profiles
+  // Get reviews with reviewer profiles and attached files
   const { data: reviews } = await supabase
     .from("reviews")
     .select(`
       *,
-      profiles:reviewer_id (id, full_name, avatar_url, university_or_firm, verified_professional)
+      profiles:reviewer_id (id, full_name, avatar_url, university_or_firm, verified_professional),
+      review_files (id, file_url, file_name, file_type, file_size)
     `)
     .eq("project_id", id)
     .order("created_at", { ascending: false })
