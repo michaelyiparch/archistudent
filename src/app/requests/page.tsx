@@ -29,6 +29,13 @@ async function getRequests(): Promise<ReviewRequest[]> {
 
 export default async function RequestsPage() {
   const requests = await getRequests()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  let role = "student"
+  if (user) {
+    const { data: p } = await supabase.from("profiles").select("role").eq("user_id", user.id).single()
+    role = p?.role || "student"
+  }
 
   return (
     <>
@@ -36,7 +43,7 @@ export default async function RequestsPage() {
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <h1 className="text-2xl font-bold mb-2">Review Requests</h1>
         <p className="text-zinc-500 text-sm mb-8">Manage your private 1-to-1 review requests.</p>
-        <RequestsList requests={requests} />
+        <RequestsList requests={requests} userRole={role} />
       </main>
     </>
   )

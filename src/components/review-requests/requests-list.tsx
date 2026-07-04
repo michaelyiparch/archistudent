@@ -19,10 +19,11 @@ const STATUS_COLORS: Record<string, string> = {
   declined: "bg-zinc-100 text-zinc-600 border-zinc-200",
 }
 
-export function RequestsList({ requests: initial }: { requests: ReviewRequest[] }) {
+export function RequestsList({ requests: initial, userRole }: { requests: ReviewRequest[]; userRole: string }) {
   const router = useRouter()
+  const isProfessional = userRole === "professional"
   const [requests, setRequests] = useState(initial)
-  const [tab, setTab] = useState<"incoming" | "outgoing">("incoming")
+  const [tab, setTab] = useState<"incoming" | "outgoing">(isProfessional ? "incoming" : "outgoing")
 
   const incoming = requests.filter(r => r.status !== "completed" || tab === "incoming")
   const outgoing = requests.filter(r => r.student_id === requests.find(x => x.student)?.student_id)
@@ -56,12 +57,14 @@ export function RequestsList({ requests: initial }: { requests: ReviewRequest[] 
     <div>
       {/* Tab switcher */}
       <div className="flex gap-1 mb-6 bg-zinc-100 rounded-lg p-1 w-fit">
-        <button
-          onClick={() => setTab("incoming")}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "incoming" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"}`}
-        >
-          Incoming
-        </button>
+        {isProfessional && (
+          <button
+            onClick={() => setTab("incoming")}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "incoming" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"}`}
+          >
+            Incoming
+          </button>
+        )}
         <button
           onClick={() => setTab("outgoing")}
           className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${tab === "outgoing" ? "bg-white shadow-sm text-zinc-900" : "text-zinc-500 hover:text-zinc-700"}`}
