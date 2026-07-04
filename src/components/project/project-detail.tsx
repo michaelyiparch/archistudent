@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils"
 import { CATEGORY_LABELS, STAGE_LABELS } from "@/types/database"
 import type { Project, Review, Comment } from "@/types/database"
 import { formatDistanceToNow } from "date-fns"
+import { InviteArchitectDialog } from "@/components/review-requests/invite-architect-dialog"
 
 export function ProjectDetail({
   project,
@@ -52,6 +53,11 @@ export function ProjectDetail({
   const [liked, setLiked] = useState(project.user_has_liked || clientLiked)
   const [likeCount, setLikeCount] = useState(project.like_count || 0)
   const [likeLoading, setLikeLoading] = useState(false)
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+
+  const isAdmin = profile?.is_admin === true
+  const isOwner = profile?.id && project.user_id === profile.id
+  const canDeleteProject = isAdmin || isOwner
 
   const images = [...(project.project_images || [])].sort((a, b) => a.sort_order - b.sort_order)
   const authorProfile = project.profiles
@@ -137,10 +143,6 @@ export function ProjectDetail({
     }
     setCommentLoading(false)
   }
-
-  const isAdmin = profile?.is_admin === true
-  const isOwner = profile?.id && project.user_id === profile.id
-  const canDeleteProject = isAdmin || isOwner
 
   const handleDeleteProject = async () => {
     if (!confirm("Delete this entire project? This cannot be undone.")) return
@@ -275,6 +277,11 @@ export function ProjectDetail({
               <Heart className={cn("mr-1.5 h-4 w-4", liked && "fill-current")} />
               {likeCount}
             </Button>
+            {isOwner && profile?.role === "student" && (
+              <Button size="sm" variant="outline" onClick={() => setShowInviteDialog(true)}>
+                <Send className="mr-1.5 h-4 w-4" /> Invite Architect
+              </Button>
+            )}
           </div>
 
           <Separator />
@@ -503,6 +510,12 @@ export function ProjectDetail({
           </div>
         </div>
       </div>
+      <InviteArchitectDialog
+        projectId={project.id}
+        projectTitle={project.title}
+        open={showInviteDialog}
+        onOpenChange={setShowInviteDialog}
+      />
     </main>
   )
 }
