@@ -11,11 +11,12 @@ import type { Profile } from "@/types/database"
 export default async function TalentPage() {
   const supabase = await createClient()
 
-  // Fetch all professionals
+  // Fetch verified professionals only (excludes admin, test accounts)
   const { data: profiles } = await supabase
     .from("profiles")
     .select("*")
     .eq("role", "professional")
+    .eq("verified_professional", true)
     .order("full_name")
 
   const professionals = (profiles || []) as Profile[]
