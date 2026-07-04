@@ -41,7 +41,7 @@ export default async function HomePage() {
                     Join the Community <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 )}
-                <Link href="#feed" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>
                   Browse Projects
                 </Link>
               </div>
