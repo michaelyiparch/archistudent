@@ -11,25 +11,24 @@ import type { Profile } from "@/types/database"
 export default async function TalentPage() {
   const supabase = await createClient()
 
-  // Fetch verified professionals only (excludes admin, test accounts)
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "professional")
-    .eq("verified_professional", true)
-    .order("full_name")
+  // Fetch profiles and review stats in parallel
+  const [profilesResult, reviewResult] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "professional")
+      .eq("verified_professional", true)
+      .order("full_name"),
+    supabase
+      .from("reviews")
+      .select("reviewer_id, overall_rating"),
+  ])
 
-  const professionals = (profiles || []) as Profile[]
-  const profIds = professionals.map((p) => p.id)
-
-  // Batch-fetch review stats for each professional
-  const { data: reviewData } = await supabase
-    .from("reviews")
-    .select("reviewer_id, overall_rating")
-    .in("reviewer_id", profIds)
+  const professionals = (profilesResult.data || []) as Profile[]
+  const reviewData = reviewResult.data || []
 
   const statsMap = new Map<string, { count: number; ratings: number[] }>()
-  for (const r of reviewData || []) {
+  for (const r of reviewData) {
     const entry = statsMap.get(r.reviewer_id) || { count: 0, ratings: [] }
     entry.count++
     entry.ratings.push(r.overall_rating)
@@ -38,7 +37,7 @@ export default async function TalentPage() {
 
   return (
     <>
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Architect Pool</h1>

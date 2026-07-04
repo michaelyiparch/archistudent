@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { RequestsList } from "@/components/review-requests/requests-list"
 import type { ReviewRequest } from "@/types/database"
 
-async function getRequests(): Promise<ReviewRequest[]> {
+async function getRequestsAndRole(): Promise<{ requests: ReviewRequest[]; role: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login?redirect=/requests")
@@ -23,23 +23,18 @@ async function getRequests(): Promise<ReviewRequest[]> {
     .or(`student_id.eq.${profile.id},architect_id.eq.${profile.id}`)
     .order("created_at", { ascending: false })
 
-  if (error) return []
-  return (data as ReviewRequest[]) || []
+  return {
+    requests: (error ? [] : (data as ReviewRequest[]) || []),
+    role: profile.role || "student",
+  }
 }
 
 export default async function RequestsPage() {
-  const requests = await getRequests()
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  let role = "student"
-  if (user) {
-    const { data: p } = await supabase.from("profiles").select("role").eq("user_id", user.id).single()
-    role = p?.role || "student"
-  }
+  const { requests, role } = await getRequestsAndRole()
 
   return (
     <>
-      
+
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <h1 className="text-2xl font-bold mb-2">Review Requests</h1>
         <p className="text-zinc-500 text-sm mb-8">Manage your private 1-to-1 review requests.</p>

@@ -3,9 +3,10 @@ import { ProjectCard } from "@/components/feed/project-card"
 import { ProjectFeedTabs } from "@/components/feed/project-feed-tabs"
 import type { Project } from "@/types/database"
 
-async function getProjects(filter: "public" | "private"): Promise<Project[]> {
+async function getProjectsAndProfile() {
   const supabase = await createClient()
 
+  // Single auth lookup — shared between feed + getProjects
   const { data: { user } } = await supabase.auth.getUser()
   let profileId: string | null = null
   let isProfessional = false
@@ -15,7 +16,7 @@ async function getProjects(filter: "public" | "private"): Promise<Project[]> {
     isProfessional = pd?.role === "professional"
   }
 
-  let query = supabase
+  const { data: projects, error } = await supabase
     .from("projects")
     .select(`
       *,
@@ -24,20 +25,13 @@ async function getProjects(filter: "public" | "private"): Promise<Project[]> {
       reviews (id, overall_rating),
       likes (id, user_id)
     `)
+    .eq("visibility", "public")
     .order("created_at", { ascending: false })
     .limit(30)
 
-  if (filter === "private") {
-    query = query.eq("visibility", "private")
-  } else {
-    query = query.eq("visibility", "public")
-  }
+  if (error || !projects) return { publicProjects: [], isProfessional, profileId }
 
-  const { data: projects, error } = await query
-
-  if (error || !projects) return []
-
-  return projects.map((p: Record<string, unknown>) => {
+  const mapped = projects.map((p: Record<string, unknown>) => {
     const likes = (p.likes as Array<{ id: string; user_id: string }>) || []
     const reviews = (p.reviews as Array<{ id: string; overall_rating: number }>) || []
     const images = (p.project_images as Array<{ id: string; url: string; caption: string | null; sort_order: number }>) || []
@@ -57,18 +51,12 @@ async function getProjects(filter: "public" | "private"): Promise<Project[]> {
       cover_image_url: [...images].sort((a, b) => a.sort_order - b.sort_order)[0]?.url || p.cover_image_url,
     } as Project
   })
+
+  return { publicProjects: mapped, isProfessional, profileId }
 }
 
 export async function ProjectFeed() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  let isProfessional = false
-  if (user) {
-    const { data: pd } = await supabase.from("profiles").select("role").eq("user_id", user.id).single()
-    isProfessional = pd?.role === "professional"
-  }
-
-  const publicProjects = await getProjects("public")
+  const { publicProjects, isProfessional } = await getProjectsAndProfile()
 
   return (
     <ProjectFeedTabs
