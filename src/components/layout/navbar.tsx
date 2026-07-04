@@ -72,7 +72,7 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <Link href="/" className={ghostLinkClass}>
+            <Link href="/explore" className={ghostLinkClass}>
               <Compass className="h-4 w-4 mr-1.5" /> Explore
             </Link>
             <Link href="/talent" className={ghostLinkClass}>
@@ -185,7 +185,7 @@ export function Navbar() {
           </form>
           <div className="flex flex-col gap-1">
             <Link
-              href="/"
+              href="/explore"
               className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}
               onClick={() => setMobileMenuOpen(false)}
             >
