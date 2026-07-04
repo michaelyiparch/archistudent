@@ -60,6 +60,10 @@ export function ProfileView({
 
   const totalLikes = projects.reduce((sum, p) => sum + (p.like_count || 0), 0)
   const totalReviews = projects.reduce((sum, p) => sum + (p.review_count || 0), 0)
+  const ratedProjects = projects.filter(p => p.avg_rating != null && p.avg_rating > 0)
+  const overallAvg = ratedProjects.length > 0
+    ? ratedProjects.reduce((sum, p) => sum + (p.avg_rating || 0), 0) / ratedProjects.length
+    : null
 
   const handleSendMessage = async () => {
     if (!message.trim() || !currentProfile) return
@@ -154,6 +158,15 @@ export function ProfileView({
               <div className="text-center"><p className="text-xl font-bold">{projects.length}</p><p className="text-xs text-zinc-500">Projects</p></div>
               <div className="text-center"><p className="text-xl font-bold">{totalLikes}</p><p className="text-xs text-zinc-500">Likes</p></div>
               <div className="text-center"><p className="text-xl font-bold">{totalReviews}</p><p className="text-xs text-zinc-500">Reviews</p></div>
+              {overallAvg != null && (
+                <div className="text-center">
+                  <p className="text-xl font-bold flex items-center justify-center gap-0.5">
+                    <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                    {overallAvg.toFixed(1)}
+                  </p>
+                  <p className="text-xs text-zinc-500">Avg Rating</p>
+                </div>
+              )}
               {profile.role === "professional" && (
                 <div className="text-center"><p className="text-xl font-bold">{reviewsWritten.length}</p><p className="text-xs text-zinc-500">Reviews Given</p></div>
               )}
