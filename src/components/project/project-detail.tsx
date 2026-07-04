@@ -418,7 +418,14 @@ export function ProjectDetail({
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{review.profiles?.full_name}</p>
+                        <p className="text-sm font-medium inline-flex items-center gap-1">
+                          {review.profiles?.full_name}
+                          {review.profiles?.verified_professional && (
+                            <span className="text-blue-500" title="Verified Professional">
+                              <Award className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-zinc-500">{review.profiles?.university_or_firm || "Architect"}</p>
                       </div>
                       <div className="ml-auto flex items-center gap-2">
