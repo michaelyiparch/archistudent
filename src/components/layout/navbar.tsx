@@ -76,7 +76,7 @@ export function Navbar() {
               <Compass className="h-4 w-4 mr-1.5" /> Explore
             </Link>
             <Link href="/talent" className={ghostLinkClass}>
-              <Users className="h-4 w-4 mr-1.5" /> Talent
+              <Users className="h-4 w-4 mr-1.5" /> Architects
             </Link>
             {user && (
               <Link href="/upload" className={ghostLinkClass}>
@@ -194,7 +194,7 @@ export function Navbar() {
               className={cn(buttonVariants({ variant: "ghost" }), "justify-start")}
               onClick={() => setMobileMenuOpen(false)}
             >
-              <Users className="mr-2 h-4 w-4" /> Talent
+              <Users className="mr-2 h-4 w-4" /> Architects
             </Link>
             {user && (
               <Link
