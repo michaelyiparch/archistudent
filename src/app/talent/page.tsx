@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Star, Briefcase, Award } from "lucide-react"
+import { Briefcase, Award } from "lucide-react"
 import Link from "next/link"
 import type { Profile } from "@/types/database"
 
@@ -60,9 +60,6 @@ export default async function TalentPage() {
             {professionals.map((pro) => {
               const stats = statsMap.get(pro.id)
               const count = stats?.count || 0
-              const avgRating = stats && stats.ratings.length > 0
-                ? stats.ratings.reduce((a, b) => a + b, 0) / stats.ratings.length
-                : null
 
               const initials = (pro.full_name || "")
                 .split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) || "?"
@@ -102,12 +99,6 @@ export default async function TalentPage() {
                           <span className="text-zinc-500">
                             <span className="font-semibold text-zinc-900">{count}</span> review{count !== 1 ? "s" : ""}
                           </span>
-                          {avgRating != null && avgRating > 0 && (
-                            <span className="flex items-center gap-1 text-zinc-500">
-                              <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                              <span className="font-semibold text-zinc-900">{avgRating.toFixed(1)}</span> avg
-                            </span>
-                          )}
                         </div>
 
                         <Link
