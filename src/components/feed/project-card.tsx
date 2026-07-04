@@ -117,7 +117,7 @@ export function ProjectCard({ project }: { project: Project }) {
 
   return (
     <Card className="group overflow-hidden rounded-2xl border-zinc-200/60 card-hover">
-      <Link href={`/project/${project.id}`}>
+      <Link href={`/project/${project.id}`} prefetch={true}>
         {/* Cover Image */}
         <div className="aspect-[4/3] bg-zinc-100 relative overflow-hidden">
           {project.cover_image_url ? (
