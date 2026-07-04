@@ -38,7 +38,6 @@ function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
-  const [role, setRole] = useState<"student" | "professional">("student")
   const [loading, setLoading] = useState(false)
 
   const supabase = createClient()
@@ -62,7 +61,7 @@ function LoginForm() {
       email,
       password,
       options: {
-        data: { full_name: fullName, role },
+        data: { full_name: fullName, role: "student" },
       },
     })
     if (result.error) {
@@ -81,7 +80,7 @@ function LoginForm() {
             .from("profiles")
             .update({
               full_name: fullName.trim() || email.split("@")[0],
-              role: role,
+              role: "student",
             })
             .eq("id", pd.id)
 
@@ -93,7 +92,7 @@ function LoginForm() {
             .insert({
               user_id: result.data.user.id,
               full_name: fullName.trim() || email.split("@")[0],
-              role: role,
+              role: "student",
             })
 
           if (insertErr) console.error("Profile insert error:", insertErr)
@@ -231,33 +230,6 @@ function LoginForm() {
                       <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" required />
                     </div>
                     <div className="space-y-2">
-                      <Label>I am a...</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setRole("student")}
-                          className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                            role === "student"
-                              ? "border-zinc-900 bg-zinc-50 text-zinc-900"
-                              : "border-zinc-200 text-zinc-500 hover:border-zinc-300"
-                          }`}
-                        >
-                          🎓 Student
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setRole("professional")}
-                          className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                            role === "professional"
-                              ? "border-zinc-900 bg-zinc-50 text-zinc-900"
-                              : "border-zinc-200 text-zinc-500 hover:border-zinc-300"
-                          }`}
-                        >
-                          🏛️ Architect
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="signupEmail">Email</Label>
                       <Input id="signupEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
                     </div>
@@ -265,8 +237,9 @@ function LoginForm() {
                       <Label htmlFor="signupPassword">Password</Label>
                       <Input id="signupPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min. 6 characters" required minLength={6} />
                     </div>
+                    <p className="text-xs text-zinc-400">Everyone joins as a student. Admins promote users to architect status.</p>
                     <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Creating account..." : `Create ${role === "student" ? "Student" : "Architect"} Account`}
+                      {loading ? "Creating account..." : "Create Account"}
                     </Button>
                   </form>
                 </TabsContent>

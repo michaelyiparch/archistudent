@@ -183,13 +183,24 @@ export function ProfileView({
               )}
             </div>
 
-            {/* Admin: verify/unverify professional */}
-            {currentProfile?.is_admin && profile.role === "professional" && (
-              <div className="mt-3">
-                <Button size="sm" variant={verified ? "outline" : "default"} onClick={handleVerify}>
-                  <Award className="mr-1.5 h-4 w-4" />
-                  {verified ? "Remove Verification" : "Verify Professional"}
+            {/* Admin: promote/demote + verify */}
+            {currentProfile?.is_admin && (
+              <div className="mt-3 flex gap-2 flex-wrap">
+                <Button size="sm" variant="outline" onClick={async () => {
+                  const supabase = createClient()
+                  const newRole = profile.role === "professional" ? "student" : "professional"
+                  await supabase.from("profiles").update({ role: newRole }).eq("id", profile.id)
+                  toast.success(newRole === "professional" ? "Promoted to architect" : "Demoted to student")
+                  router.refresh()
+                }}>
+                  {profile.role === "professional" ? "Demote to Student" : "Promote to Architect"}
                 </Button>
+                {profile.role === "professional" && (
+                  <Button size="sm" variant={verified ? "outline" : "default"} onClick={handleVerify}>
+                    <Award className="mr-1.5 h-4 w-4" />
+                    {verified ? "Unverify" : "Verify"}
+                  </Button>
+                )}
               </div>
             )}
 
