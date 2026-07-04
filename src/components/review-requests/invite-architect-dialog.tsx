@@ -24,19 +24,28 @@ export function InviteArchitectDialog({ projectId, projectTitle, open, onOpenCha
   useEffect(() => {
     if (open) {
       const supabase = createClient()
-      supabase.from("profiles")
-        .select("id, full_name, university_or_firm")
-        .eq("role", "professional")
-        .eq("verified_professional", true)
-        .order("full_name")
-        .then(({ data }) => {
-          if (data) {
-            setArchitects(data as typeof architects)
-            if (data.length > 0) setSelectedId(data[0].id)
+      // Fetch both architects and existing reviewers for this project
+      Promise.all([
+        supabase.from("profiles")
+          .select("id, full_name, university_or_firm")
+          .eq("role", "professional")
+          .eq("verified_professional", true)
+          .order("full_name"),
+        supabase.from("reviews")
+          .select("reviewer_id")
+          .eq("project_id", projectId),
+      ]).then(([{ data: archs }, { data: reviews }]) => {
+        if (archs) {
+          const reviewedIds = new Set((reviews || []).map(r => r.reviewer_id))
+          const available = (archs as typeof architects).filter(a => !reviewedIds.has(a.id))
+          setArchitects(available)
+          if (available.length > 0 && !available.find(a => a.id === selectedId)) {
+            setSelectedId(available[0].id)
           }
-        })
+        }
+      })
     }
-  }, [open])
+  }, [open, projectId, selectedId])
 
   const handleSend = async () => {
     if (!selectedId) return
@@ -77,17 +86,21 @@ export function InviteArchitectDialog({ projectId, projectTitle, open, onOpenCha
         <div className="space-y-4 mt-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Select Architect</label>
-            <select
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white"
-            >
-              {architects.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.full_name}{a.university_or_firm ? ` — ${a.university_or_firm}` : ""}
-                </option>
-              ))}
-            </select>
+            {architects.length === 0 ? (
+              <p className="text-sm text-zinc-400 py-2">All available architects have already reviewed this project.</p>
+            ) : (
+              <select
+                value={selectedId}
+                onChange={(e) => setSelectedId(e.target.value)}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm bg-white"
+              >
+                {architects.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.full_name}{a.university_or_firm ? ` — ${a.university_or_firm}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="text-sm font-medium mb-1.5 block">Message (optional)</label>
@@ -98,7 +111,7 @@ export function InviteArchitectDialog({ projectId, projectTitle, open, onOpenCha
               rows={3}
             />
           </div>
-          <Button onClick={handleSend} disabled={loading || !selectedId} className="w-full">
+          <Button onClick={handleSend} disabled={loading || !selectedId || architects.length === 0} className="w-full">
             {loading ? "Sending..." : "Send Invitation"}
           </Button>
         </div>
