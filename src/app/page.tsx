@@ -1,8 +1,7 @@
-import { ProjectFeed } from "@/components/feed/project-feed"
 import { HeroCTA } from "@/components/layout/hero-cta"
-import { Suspense } from "react"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Lightbulb, PenTool, Eye, Award, Star } from "lucide-react"
+import { buttonVariants } from "@/components/ui/button"
+import { Lightbulb, PenTool, Eye, Award, Star, ArrowRight } from "lucide-react"
+import Link from "next/link"
 
 export default function HomePage() {
   return (
@@ -97,16 +96,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Project Feed */}
-        <section id="feed" className="py-16 md:py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold tracking-tight">Discover Projects</h2>
-              <p className="text-zinc-500 mt-1">Explore work from architecture students worldwide</p>
-            </div>
-            <Suspense fallback={<FeedSkeleton />}>
-              <ProjectFeed />
-            </Suspense>
+        {/* CTA to Explore */}
+        <section className="py-16 md:py-24 bg-white">
+          <div className="container mx-auto px-4 text-center max-w-xl">
+            <h2 className="text-3xl font-bold tracking-tight">Ready to explore?</h2>
+            <p className="text-zinc-500 mt-3 text-lg">
+              Browse projects from architecture students worldwide — get inspired, leave feedback, and connect.
+            </p>
+            <Link href="/explore" className={buttonVariants({ size: "lg" }) + " mt-8"}>
+              Browse Projects <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </div>
         </section>
 
@@ -122,19 +121,5 @@ export default function HomePage() {
         </footer>
       </main>
     </>
-  )
-}
-
-function FeedSkeleton() {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="space-y-3 bg-white rounded-xl p-3 border border-zinc-100">
-          <Skeleton className="aspect-[4/3] w-full rounded-lg" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-3 w-1/2" />
-        </div>
-      ))}
-    </div>
   )
 }

@@ -28,7 +28,7 @@ export function HeroCTA() {
           Join the Community <ArrowRight className="ml-2 h-5 w-5" />
         </Link>
       )}
-      <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>
+      <Link href="/explore" className={buttonVariants({ variant: "outline", size: "lg" })}>
         Browse Projects
       </Link>
     </div>
