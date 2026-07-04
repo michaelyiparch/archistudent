@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react"
 import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { createClient } from "@/lib/supabase/client"
-import { Navbar } from "@/components/layout/navbar"
+
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -172,7 +172,7 @@ function ReviewForm() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         {requestId && (
           <div className="bg-amber-50 text-amber-800 text-sm p-3 rounded-lg mb-6 border border-amber-200">

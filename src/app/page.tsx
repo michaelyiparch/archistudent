@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/layout/navbar"
+
 import { ProjectFeed } from "@/components/feed/project-feed"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -13,7 +13,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Navbar />
+      
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden bg-gradient-to-b from-amber-50/40 via-white to-white">

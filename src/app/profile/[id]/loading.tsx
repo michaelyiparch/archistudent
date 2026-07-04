@@ -1,11 +1,8 @@
-import { Navbar } from "@/components/layout/navbar"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function ProfileLoading() {
   return (
-    <>
-      <Navbar />
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
+    <main className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="bg-zinc-50 rounded-2xl p-6 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <Skeleton className="h-24 w-24 rounded-full" />
@@ -31,6 +28,5 @@ export default function ProfileLoading() {
           ))}
         </div>
       </main>
-    </>
   )
 }

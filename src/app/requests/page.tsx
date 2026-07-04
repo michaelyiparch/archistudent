@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { Navbar } from "@/components/layout/navbar"
+
 import { RequestsList } from "@/components/review-requests/requests-list"
 import type { ReviewRequest } from "@/types/database"
 
@@ -39,7 +39,7 @@ export default async function RequestsPage() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <h1 className="text-2xl font-bold mb-2">Review Requests</h1>
         <p className="text-zinc-500 text-sm mb-8">Manage your private 1-to-1 review requests.</p>

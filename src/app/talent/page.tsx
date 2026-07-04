@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { Navbar } from "@/components/layout/navbar"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
@@ -38,7 +38,7 @@ export default async function TalentPage() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Architect Pool</h1>

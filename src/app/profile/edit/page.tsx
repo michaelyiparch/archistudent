@@ -4,7 +4,7 @@ import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { createClient } from "@/lib/supabase/client"
-import { Navbar } from "@/components/layout/navbar"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -113,7 +113,7 @@ export default function EditProfilePage() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8 max-w-xl">
         <Link href={`/profile/${profile.id}`} className="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-900 mb-6">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to profile

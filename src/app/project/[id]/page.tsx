@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { Navbar } from "@/components/layout/navbar"
+
 import { ProjectDetail } from "@/components/project/project-detail"
 import type { Project, Review, Comment } from "@/types/database"
 
@@ -82,7 +82,7 @@ export default async function ProjectPage({
 
   return (
     <>
-      <Navbar />
+      
       <ProjectDetail
         project={data.project}
         reviews={data.reviews}

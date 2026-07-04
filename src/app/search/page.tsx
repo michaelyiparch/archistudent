@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { Navbar } from "@/components/layout/navbar"
+
 import { ProjectCard } from "@/components/feed/project-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -98,7 +98,7 @@ export default async function SearchPage({
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { Navbar } from "@/components/layout/navbar"
+
 import { ProfileView } from "@/components/profile/profile-view"
 import type { Profile, Project, Review } from "@/types/database"
 
@@ -63,7 +63,7 @@ export default async function ProfilePage({
 
   return (
     <>
-      <Navbar />
+      
       <ProfileView
         profile={data.profile}
         projects={data.projects}

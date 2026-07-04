@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { createClient } from "@/lib/supabase/client"
-import { Navbar } from "@/components/layout/navbar"
+
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -172,7 +172,7 @@ export default function UploadPage() {
   if (authLoading) {
     return (
       <>
-        <Navbar />
+        
         <main className="container mx-auto px-4 py-16 max-w-3xl text-center">
           <div className="h-6 w-32 bg-zinc-200 rounded animate-pulse mx-auto" />
         </main>
@@ -183,7 +183,7 @@ export default function UploadPage() {
   if (!profile) {
     return (
       <>
-        <Navbar />
+        
         <main className="container mx-auto px-4 py-16 max-w-3xl text-center space-y-4">
           <h1 className="text-2xl font-bold">Sign In Required</h1>
           <p className="text-zinc-500">You need an account to upload projects.</p>
@@ -197,7 +197,7 @@ export default function UploadPage() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <Link href="/" className="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-900 mb-6">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back

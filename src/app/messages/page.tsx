@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { createClient } from "@/lib/supabase/client"
-import { Navbar } from "@/components/layout/navbar"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -137,7 +137,7 @@ export default function MessagesPage() {
 
   return (
     <>
-      <Navbar />
+      
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Link href="/" className="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-900 mb-6">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
