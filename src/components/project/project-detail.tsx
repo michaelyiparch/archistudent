@@ -54,6 +54,19 @@ export function ProjectDetail({
   const [likeCount, setLikeCount] = useState(project.like_count || 0)
   const [likeLoading, setLikeLoading] = useState(false)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [vis, setVis] = useState(project.visibility || "public")
+  const [togglingVis, setTogglingVis] = useState(false)
+
+  const handleToggleVisibility = async () => {
+    setTogglingVis(true)
+    const newVis = vis === "public" ? "private" : "public"
+    const supabase = createClient()
+    const { error } = await supabase.from("projects").update({ visibility: newVis }).eq("id", project.id)
+    if (error) { toast.error("Failed to update"); setTogglingVis(false); return }
+    setVis(newVis)
+    toast.success(newVis === "private" ? "Only architects can see this now" : "Everyone can see this now")
+    setTogglingVis(false)
+  }
 
   const isAdmin = profile?.is_admin === true
   const isOwner = profile?.id && project.user_id === profile.id
@@ -244,9 +257,13 @@ export function ProjectDetail({
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   <Badge>{CATEGORY_LABELS[project.category]}</Badge>
                   <Badge variant="secondary">{STAGE_LABELS[project.stage]}</Badge>
-                  {project.visibility === "private" && (
+                  {vis === "private" ? (
                     <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
-                      <EyeOff className="mr-1 h-3 w-3" /> Private
+                      <EyeOff className="mr-1 h-3 w-3" /> Architects Only
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <Eye className="mr-1 h-3 w-3" /> Everyone
                     </Badge>
                   )}
                   {project.avg_rating && (
@@ -280,6 +297,15 @@ export function ProjectDetail({
             {isOwner && profile?.role === "student" && (
               <Button size="sm" variant="outline" onClick={() => setShowInviteDialog(true)}>
                 <Send className="mr-1.5 h-4 w-4" /> Invite Architect
+              </Button>
+            )}
+            {isOwner && (
+              <Button size="sm" variant="ghost" onClick={handleToggleVisibility} disabled={togglingVis}>
+                {vis === "public" ? (
+                  <><EyeOff className="mr-1.5 h-4 w-4" /> Architects Only</>
+                ) : (
+                  <><Eye className="mr-1.5 h-4 w-4" /> Everyone</>
+                )}
               </Button>
             )}
           </div>
