@@ -1,19 +1,13 @@
-
 import { ProjectFeed } from "@/components/feed/project-feed"
+import { HeroCTA } from "@/components/layout/hero-cta"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { buttonVariants } from "@/components/ui/button"
-import { ArrowRight, Lightbulb, PenTool, Eye, Award, Star } from "lucide-react"
-import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
+import { Lightbulb, PenTool, Eye, Award, Star } from "lucide-react"
 
-export default async function HomePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+export default function HomePage() {
   return (
     <>
-      
+
       <main>
         {/* Hero */}
         <section className="relative overflow-hidden bg-gradient-to-b from-amber-50/40 via-white to-white">
@@ -31,20 +25,7 @@ export default async function HomePage() {
                 Not just likes and comments. Get detailed rubric-based feedback on concept, execution,
                 and presentation from professionals who shape the built world.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
-                {user ? (
-                  <Link href="/upload" className={buttonVariants({ size: "lg" })}>
-                    Share Your Project <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                ) : (
-                  <Link href="/auth/login" className={buttonVariants({ size: "lg" })}>
-                    Join the Community <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                )}
-                <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>
-                  Browse Projects
-                </Link>
-              </div>
+              <HeroCTA />
             </div>
           </div>
         </section>
