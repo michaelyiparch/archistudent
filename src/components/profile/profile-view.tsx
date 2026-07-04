@@ -40,6 +40,16 @@ export function ProfileView({
   const [showRequestDialog, setShowRequestDialog] = useState(false)
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
+  const [verified, setVerified] = useState(profile.verified_professional)
+
+  const handleVerify = async () => {
+    const supabase = createClient()
+    const newVal = !verified
+    const { error } = await supabase.from("profiles").update({ verified_professional: newVal }).eq("id", profile.id)
+    if (error) { toast.error("Failed to update"); return }
+    setVerified(newVal)
+    toast.success(newVal ? "Professional verified" : "Verification removed")
+  }
 
   const initials = profile.full_name
     ?.split(" ")
@@ -172,6 +182,16 @@ export function ProfileView({
                 </Button>
               )}
             </div>
+
+            {/* Admin: verify/unverify professional */}
+            {currentProfile?.is_admin && profile.role === "professional" && (
+              <div className="mt-3">
+                <Button size="sm" variant={verified ? "outline" : "default"} onClick={handleVerify}>
+                  <Award className="mr-1.5 h-4 w-4" />
+                  {verified ? "Remove Verification" : "Verify Professional"}
+                </Button>
+              </div>
+            )}
 
             {/* Contact form */}
             {showContact && currentProfile && (
