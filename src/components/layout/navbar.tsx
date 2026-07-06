@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useNotifications } from "@/components/notifications/use-notifications"
 import { createClient } from "@/lib/supabase/client"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -17,11 +18,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Home, Upload, Search, LogOut, User, Menu, X, Compass, Mail, Users, ClipboardList } from "lucide-react"
+import { Upload, Search, LogOut, User, Menu, X, Compass, Mail, Users, ClipboardList, Bell } from "lucide-react"
 import { toast } from "sonner"
 
 export function Navbar() {
   const { user, profile, loading } = useAuth()
+  const { total, unreadMessages, pendingRequests } = useNotifications()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -105,46 +107,80 @@ export function Navbar() {
           {loading ? (
             <div className="h-8 w-8 rounded-full bg-zinc-100 animate-pulse" />
           ) : user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-transparent hover:ring-zinc-200 transition-all">
-                  <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
-                  <AvatarFallback className="text-xs bg-zinc-900 text-white">{initials}</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{profile?.full_name || "User"}</p>
-                    <p className="text-xs text-zinc-500 capitalize leading-none mt-1">{profile?.role || "user"}</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {profile?.id && (
-                <DropdownMenuItem onClick={() => router.push(`/profile/${profile.id}`)}>
-                  <User className="mr-2 h-4 w-4" /> Profile
-                </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => router.push("/profile/edit")}>
-                  <User className="mr-2 h-4 w-4" /> Edit Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/messages")}>
-                  <Mail className="mr-2 h-4 w-4" /> Messages
-                </DropdownMenuItem>
-                {profile?.role === "professional" && (
-                  <DropdownMenuItem onClick={() => router.push("/requests")}>
-                    <ClipboardList className="mr-2 h-4 w-4" /> Review Requests
+            <>
+              {/* Notification bell */}
+              {total > 0 && (
+                <Link
+                  href={pendingRequests > 0 ? "/requests" : "/messages"}
+                  className="relative p-2 rounded-full hover:bg-zinc-100 transition-colors"
+                >
+                  <Bell className="h-5 w-5 text-zinc-600" />
+                  <span className="absolute -top-0.5 -right-0.5 h-5 w-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    {total > 9 ? "9+" : total}
+                  </span>
+                </Link>
+              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger className="relative">
+                  <Avatar className="h-8 w-8 cursor-pointer ring-2 ring-transparent hover:ring-zinc-200 transition-all">
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                    <AvatarFallback className="text-xs bg-zinc-900 text-white">{initials}</AvatarFallback>
+                  </Avatar>
+                  {total > 0 && (
+                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                      {total > 9 ? "9+" : total}
+                    </span>
+                  )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{profile?.full_name || "User"}</p>
+                      <p className="text-xs text-zinc-500 capitalize leading-none mt-1">{profile?.role || "user"}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {profile?.id && (
+                  <DropdownMenuItem onClick={() => router.push(`/profile/${profile.id}`)}>
+                    <User className="mr-2 h-4 w-4" /> Profile
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => router.push("/upload")}>
-                  <Upload className="mr-2 h-4 w-4" /> Upload Project
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} disabled={signingOut}>
-                  <LogOut className="mr-2 h-4 w-4" /> {signingOut ? "Signing out..." : "Sign Out"}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  )}
+                  <DropdownMenuItem onClick={() => router.push("/profile/edit")}>
+                    <User className="mr-2 h-4 w-4" /> Edit Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push("/messages")} className="justify-between">
+                    <span className="flex items-center">
+                      <Mail className="mr-2 h-4 w-4" /> Messages
+                    </span>
+                    {unreadMessages > 0 && (
+                      <span className="h-5 min-w-5 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        {unreadMessages > 9 ? "9+" : unreadMessages}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+                  {profile?.role === "professional" && (
+                    <DropdownMenuItem onClick={() => router.push("/requests")} className="justify-between">
+                      <span className="flex items-center">
+                        <ClipboardList className="mr-2 h-4 w-4" /> Review Requests
+                      </span>
+                      {pendingRequests > 0 && (
+                        <span className="h-5 min-w-5 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                          {pendingRequests > 9 ? "9+" : pendingRequests}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => router.push("/upload")}>
+                    <Upload className="mr-2 h-4 w-4" /> Upload Project
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} disabled={signingOut}>
+                    <LogOut className="mr-2 h-4 w-4" /> {signingOut ? "Signing out..." : "Sign Out"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/auth/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>
@@ -206,6 +242,41 @@ export function Navbar() {
               >
                 <Upload className="mr-2 h-4 w-4" /> Upload Project
               </Link>
+            )}
+            {user && (
+              <>
+                <div className="h-px bg-zinc-100 my-1" />
+                <Link
+                  href="/messages"
+                  className={cn(buttonVariants({ variant: "ghost" }), "justify-start", "justify-between")}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <span className="flex items-center">
+                    <Mail className="mr-2 h-4 w-4" /> Messages
+                  </span>
+                  {unreadMessages > 0 && (
+                    <span className="h-5 min-w-5 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+                {profile?.role === "professional" && (
+                  <Link
+                    href="/requests"
+                    className={cn(buttonVariants({ variant: "ghost" }), "justify-start", "justify-between")}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span className="flex items-center">
+                      <ClipboardList className="mr-2 h-4 w-4" /> Review Requests
+                    </span>
+                    {pendingRequests > 0 && (
+                      <span className="h-5 min-w-5 px-1 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        {pendingRequests > 9 ? "9+" : pendingRequests}
+                      </span>
+                    )}
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>
